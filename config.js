@@ -1,0 +1,1 @@
+const API_URL = "YOUR_API_GATEWAY_URL";
