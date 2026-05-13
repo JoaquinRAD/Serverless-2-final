@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+
+Resources:
+
+  ExpensesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Expenses
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: expenseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: expenseId
+          KeyType: RANGE
+
+  ExpenseApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  CreateExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/createExpense/index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: Expenses
+      Environment:
+        Variables:
+          TABLE_NAME: Expenses
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ExpenseApi
+            Path: /expenses
+            Method: post
+
+  GetExpensesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/getExpenses/index.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: Expenses
+      Environment:
+        Variables:
+          TABLE_NAME: Expenses
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ExpenseApi
+            Path: /expenses
+            Method: get
+
+  UpdateExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/updateExpense/index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: Expenses
+      Environment:
+        Variables:
+          TABLE_NAME: Expenses
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ExpenseApi
+            Path: /expenses/{id}
+            Method: put
+
+  DeleteExpenseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/deleteExpense/index.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: Expenses
+      Environment:
+        Variables:
+          TABLE_NAME: Expenses
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ExpenseApi
+            Path: /expenses/{id}
+            Method: delete
